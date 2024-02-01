@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:priority/view_model.dart';
+import 'package:provider/provider.dart';
 
 const kAlertHeight = 80.0;
 
@@ -83,31 +85,12 @@ class AlertMessenger extends StatefulWidget {
 
   @override
   State<AlertMessenger> createState() => AlertMessengerState();
-
-  static AlertMessengerState of(BuildContext context) {
-    try {
-      final scope = _AlertMessengerScope.of(context);
-      return scope.state;
-    } catch (error) {
-      throw FlutterError.fromParts(
-        [
-          ErrorSummary('No AlertMessenger was found in the Element tree'),
-          ErrorDescription(
-              'AlertMessenger is required in order to show and hide alerts.'),
-          ...context.describeMissingAncestor(
-              expectedAncestorType: AlertMessenger),
-        ],
-      );
-    }
-  }
 }
 
 class AlertMessengerState extends State<AlertMessenger>
     with TickerProviderStateMixin {
   late final AnimationController controller;
-  late final Animation<double> animation;
-
-  List<Alert> listAlertWidgets = List.empty(growable: true);
+  late Animation<double> animation;
 
   @override
   void initState() {
@@ -126,6 +109,7 @@ class AlertMessengerState extends State<AlertMessenger>
     animation = Tween<double>(begin: -alertHeight, end: 0.0).animate(
       CurvedAnimation(parent: controller, curve: Curves.easeInOut),
     );
+    context.watch<ViewModel>().controller = controller;
   }
 
   @override
@@ -134,64 +118,38 @@ class AlertMessengerState extends State<AlertMessenger>
     super.dispose();
   }
 
-  void showAlert({required Alert alert}) {
-    if (!listAlertWidgets.any((e) => e.priority == alert.priority)) {
-      setState(() {
-        listAlertWidgets.add(alert);
-        listAlertWidgets.sort();
-      });
-    }
-
-    bool addedToLastPosition = listAlertWidgets.lastOrNull == alert;
-    if (addedToLastPosition) {
-      controller.reset();
-      controller.forward();
-    }
-  }
-
-  void hideAlert() {
-    controller.reverse().then((value) {
-      setState(() {
-        if (listAlertWidgets.isNotEmpty) listAlertWidgets.removeLast();
-      });
-      controller.value = controller.upperBound;
-    });
-  }
-
-  String currentMessage() {
-    return listAlertWidgets.lastOrNull?.message ?? '';
-  }
-
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: animation,
-      builder: (context, child) {
-        return Stack(
-          clipBehavior: Clip.antiAliasWithSaveLayer,
-          children: [
-            Positioned.fill(
-              top: _calculateChildPosition(),
-              child: _AlertMessengerScope(
-                state: this,
-                child: widget.child,
-              ),
-            ),
-            if (listAlertWidgets.isNotEmpty)
-              ...listAlertWidgets.take(listAlertWidgets.length - 1),
-            Positioned(
-              top: animation.value,
-              left: 0,
-              right: 0,
-              child: listAlertWidgets.lastOrNull ?? const SizedBox.shrink(),
-            ),
-          ],
+    return Consumer<ViewModel>(
+      builder: (context, viewModel, _) {
+        final listAlertWidgets = viewModel.listAlertWidgets;
+        return AnimatedBuilder(
+          animation: animation,
+          builder: (context, child) {
+            return Stack(
+              clipBehavior: Clip.antiAliasWithSaveLayer,
+              children: [
+                Positioned.fill(
+                  top: _calculateChildPosition(listAlertWidgets),
+                  child: widget.child,
+                ),
+                if (listAlertWidgets.isNotEmpty)
+                  ...listAlertWidgets.take(listAlertWidgets.length - 1),
+                Positioned(
+                  top: animation.value,
+                  left: 0,
+                  right: 0,
+                  child: listAlertWidgets.lastOrNull ?? const SizedBox.shrink(),
+                ),
+              ],
+            );
+          },
         );
       },
     );
   }
 
-  double _calculateChildPosition() {
+  double _calculateChildPosition(List<Alert> listAlertWidgets) {
     final statusbarHeight = MediaQuery.of(context).padding.top;
     var maxPosition = kAlertHeight - statusbarHeight;
 
@@ -205,28 +163,5 @@ class AlertMessengerState extends State<AlertMessenger>
           ? 0.0
           : animationPosition - statusbarHeight;
     }
-  }
-}
-
-class _AlertMessengerScope extends InheritedWidget {
-  const _AlertMessengerScope({
-    required this.state,
-    required super.child,
-  });
-
-  final AlertMessengerState state;
-
-  @override
-  bool updateShouldNotify(_AlertMessengerScope oldWidget) =>
-      state != oldWidget.state;
-
-  static _AlertMessengerScope? maybeOf(BuildContext context) {
-    return context.dependOnInheritedWidgetOfExactType<_AlertMessengerScope>();
-  }
-
-  static _AlertMessengerScope of(BuildContext context) {
-    final scope = maybeOf(context);
-    assert(scope != null, 'No _AlertMessengerScope found in context');
-    return scope!;
   }
 }
