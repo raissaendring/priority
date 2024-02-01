@@ -11,17 +11,18 @@ enum AlertPriority {
   final int value;
 }
 
-class Alert extends StatelessWidget {
+class Alert extends StatelessWidget implements Comparable {
   const Alert({
     super.key,
     required this.backgroundColor,
-    required this.child,
+    required this.message,
     required this.leading,
     required this.priority,
   });
 
   final Color backgroundColor;
-  final Widget child;
+
+  final String message;
   final Widget leading;
   final AlertPriority priority;
 
@@ -50,7 +51,7 @@ class Alert extends StatelessWidget {
                   Expanded(
                     child: DefaultTextStyle(
                       style: const TextStyle(color: Colors.white),
-                      child: child,
+                      child: Text(message),
                     ),
                   ),
                 ],
@@ -61,6 +62,14 @@ class Alert extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  @override
+  int compareTo(other) {
+    if (other is Alert) {
+      return priority.value.compareTo(other.priority.value);
+    }
+    return -1;
   }
 }
 
@@ -83,19 +92,22 @@ class AlertMessenger extends StatefulWidget {
       throw FlutterError.fromParts(
         [
           ErrorSummary('No AlertMessenger was found in the Element tree'),
-          ErrorDescription('AlertMessenger is required in order to show and hide alerts.'),
-          ...context.describeMissingAncestor(expectedAncestorType: AlertMessenger),
+          ErrorDescription(
+              'AlertMessenger is required in order to show and hide alerts.'),
+          ...context.describeMissingAncestor(
+              expectedAncestorType: AlertMessenger),
         ],
       );
     }
   }
 }
 
-class AlertMessengerState extends State<AlertMessenger> with TickerProviderStateMixin {
+class AlertMessengerState extends State<AlertMessenger>
+    with TickerProviderStateMixin {
   late final AnimationController controller;
   late final Animation<double> animation;
 
-  Widget? alertWidget;
+  List<Alert> listAlertWidgets = List.empty(growable: true);
 
   @override
   void initState() {
@@ -123,42 +135,76 @@ class AlertMessengerState extends State<AlertMessenger> with TickerProviderState
   }
 
   void showAlert({required Alert alert}) {
-    setState(() => alertWidget = alert);
-    controller.forward();
+    if (!listAlertWidgets.any((e) => e.priority == alert.priority)) {
+      setState(() {
+        listAlertWidgets.add(alert);
+        listAlertWidgets.sort();
+      });
+    }
+
+    bool addedToLastPosition = listAlertWidgets.lastOrNull == alert;
+    if (addedToLastPosition) {
+      controller.reset();
+      controller.forward();
+    }
   }
 
   void hideAlert() {
-    controller.reverse();
+    controller.reverse().then((value) {
+      setState(() {
+        if (listAlertWidgets.isNotEmpty) listAlertWidgets.removeLast();
+      });
+      controller.value = controller.upperBound;
+    });
+  }
+
+  String currentMessage() {
+    return listAlertWidgets.lastOrNull?.message ?? '';
   }
 
   @override
   Widget build(BuildContext context) {
-    final statusbarHeight = MediaQuery.of(context).padding.top;
-
     return AnimatedBuilder(
       animation: animation,
       builder: (context, child) {
-        final position = animation.value + kAlertHeight;
         return Stack(
           clipBehavior: Clip.antiAliasWithSaveLayer,
           children: [
             Positioned.fill(
-              top: position <= statusbarHeight ? 0 : position - statusbarHeight,
+              top: _calculateChildPosition(),
               child: _AlertMessengerScope(
                 state: this,
                 child: widget.child,
               ),
             ),
+            if (listAlertWidgets.isNotEmpty)
+              ...listAlertWidgets.take(listAlertWidgets.length - 1),
             Positioned(
               top: animation.value,
               left: 0,
               right: 0,
-              child: alertWidget ?? const SizedBox.shrink(),
+              child: listAlertWidgets.lastOrNull ?? const SizedBox.shrink(),
             ),
           ],
         );
       },
     );
+  }
+
+  double _calculateChildPosition() {
+    final statusbarHeight = MediaQuery.of(context).padding.top;
+    var maxPosition = kAlertHeight - statusbarHeight;
+
+    if (listAlertWidgets.isEmpty) {
+      return 0;
+    } else if (listAlertWidgets.length > 1) {
+      return maxPosition;
+    } else {
+      final animationPosition = animation.value + kAlertHeight;
+      return animationPosition <= statusbarHeight
+          ? 0.0
+          : animationPosition - statusbarHeight;
+    }
   }
 }
 
@@ -171,7 +217,8 @@ class _AlertMessengerScope extends InheritedWidget {
   final AlertMessengerState state;
 
   @override
-  bool updateShouldNotify(_AlertMessengerScope oldWidget) => state != oldWidget.state;
+  bool updateShouldNotify(_AlertMessengerScope oldWidget) =>
+      state != oldWidget.state;
 
   static _AlertMessengerScope? maybeOf(BuildContext context) {
     return context.dependOnInheritedWidgetOfExactType<_AlertMessengerScope>();
