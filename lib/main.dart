@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:priority/view_model.dart';
+import 'package:priority/alerts_view_model.dart';
 import 'package:provider/provider.dart';
 
 import 'alert_messenger.dart';
@@ -23,157 +23,142 @@ class AlertPriorityApp extends StatelessWidget {
         ),
       ),
       home: ChangeNotifierProvider(
-        create: (BuildContext context) => ViewModel(),
-        child: Consumer<ViewModel>(builder:
-            (BuildContext context, ViewModel viewModel, Widget? child) {
+        create: (_) => AlertsViewModel(),
+        child: Consumer<AlertsViewModel>(builder: (context, viewModel, _) {
           return AlertMessenger(
-            child: Builder(
-              builder: (_) {
-                return Scaffold(
-                  backgroundColor: Colors.grey[200],
-                  appBar: AppBar(
-                    title: const Text('Alerts'),
-                    centerTitle: true,
-                  ),
-                  body: SafeArea(
-                    child: Column(
-                      children: [
-                        Expanded(
-                          flex: 3,
-                          child: Center(
-                            child: Text(
-                              viewModel.currentMessage(),
-                              // AlertMessenger.of(context).currentMessage(),
-                              style: TextStyle(
-                                color: Colors.grey[500],
-                                fontSize: 16.0,
-                              ),
-                            ),
+            child: Scaffold(
+              backgroundColor: Colors.grey[200],
+              appBar: AppBar(
+                title: const Text('Alerts'),
+                centerTitle: true,
+              ),
+              body: SafeArea(
+                child: Column(
+                  children: [
+                    Expanded(
+                      flex: 3,
+                      child: Center(
+                        child: Text(
+                          viewModel.currentMessage(),
+                          style: TextStyle(
+                            color: Colors.grey[500],
+                            fontSize: 16.0,
                           ),
                         ),
-                        Expanded(
-                          child: Align(
-                            alignment: Alignment.bottomCenter,
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                      ),
+                    ),
+                    Expanded(
+                      child: Align(
+                        alignment: Alignment.bottomCenter,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: [
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceEvenly,
-                                  children: [
-                                    ElevatedButton(
-                                      onPressed: () {
-                                        viewModel.showAlert(
-                                          // AlertMessenger.of(context).showAlert(
-                                          alert: const Alert(
-                                            backgroundColor: Colors.red,
-                                            leading: Icon(Icons.error),
-                                            priority: AlertPriority.error,
-                                            message:
-                                                'Oops, ocorreu um erro. Pedimos desculpas.',
-                                          ),
-                                        );
-                                      },
-                                      style: const ButtonStyle(
-                                        backgroundColor:
-                                            MaterialStatePropertyAll(
-                                                Colors.red),
+                                AlertButton(
+                                  color: Colors.red,
+                                  icon: Icons.error,
+                                  text: 'Error',
+                                  onPressed: () {
+                                    viewModel.showAlert(
+                                      alert: const Alert(
+                                        backgroundColor: Colors.red,
+                                        leading: Icon(Icons.error),
+                                        priority: AlertPriority.error,
+                                        message:
+                                            'Oops, ocorreu um erro. Pedimos desculpas.',
                                       ),
-                                      child: const Row(
-                                        mainAxisSize: MainAxisSize.max,
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Icon(Icons.error),
-                                          SizedBox(width: 4.0),
-                                          Text('Error'),
-                                        ],
-                                      ),
-                                    ),
-                                    ElevatedButton(
-                                      onPressed: () {
-                                        viewModel.showAlert(
-                                          // AlertMessenger.of(context).showAlert(
-                                          alert: const Alert(
-                                            backgroundColor: Colors.amber,
-                                            leading: Icon(Icons.warning),
-                                            priority: AlertPriority.warning,
-                                            message:
-                                                'Atenção! Você foi avisado.',
-                                          ),
-                                        );
-                                      },
-                                      style: const ButtonStyle(
-                                        backgroundColor:
-                                            MaterialStatePropertyAll(
-                                                Colors.amber),
-                                      ),
-                                      child: const Row(
-                                        mainAxisSize: MainAxisSize.max,
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Icon(Icons.warning_outlined),
-                                          SizedBox(width: 4.0),
-                                          Text('Warning'),
-                                        ],
-                                      ),
-                                    ),
-                                    ElevatedButton(
-                                      onPressed: () {
-                                        viewModel.showAlert(
-                                          // AlertMessenger.of(context).showAlert(
-                                          alert: const Alert(
-                                            backgroundColor: Colors.green,
-                                            leading: Icon(Icons.info),
-                                            priority: AlertPriority.info,
-                                            message:
-                                                'Este é um aplicativo escrito em Flutter.',
-                                          ),
-                                        );
-                                      },
-                                      style: const ButtonStyle(
-                                        backgroundColor:
-                                            MaterialStatePropertyAll(
-                                                Colors.lightGreen),
-                                      ),
-                                      child: const Row(
-                                        mainAxisSize: MainAxisSize.max,
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Icon(Icons.info_outline),
-                                          SizedBox(width: 4.0),
-                                          Text('Info'),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
+                                    );
+                                  },
                                 ),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 24.0,
-                                    vertical: 16.0,
-                                  ),
-                                  child: ElevatedButton(
-                                    onPressed: viewModel.hideAlert,
-                                    // AlertMessenger.of(context).hideAlert,
-                                    child: const Text('Hide alert'),
-                                  ),
+                                AlertButton(
+                                  color: Colors.amber,
+                                  icon: Icons.warning_outlined,
+                                  text: 'Warning',
+                                  onPressed: () {
+                                    viewModel.showAlert(
+                                      alert: const Alert(
+                                        backgroundColor: Colors.amber,
+                                        leading: Icon(Icons.warning),
+                                        priority: AlertPriority.warning,
+                                        message: 'Atenção! Você foi avisado.',
+                                      ),
+                                    );
+                                  },
+                                ),
+                                AlertButton(
+                                  color: Colors.lightGreen,
+                                  icon: Icons.info_outline,
+                                  text: 'Info',
+                                  onPressed: () {
+                                    viewModel.showAlert(
+                                      alert: const Alert(
+                                        backgroundColor: Colors.green,
+                                        leading: Icon(Icons.info),
+                                        priority: AlertPriority.info,
+                                        message:
+                                            'Este é um aplicativo escrito em Flutter.',
+                                      ),
+                                    );
+                                  },
                                 ),
                               ],
                             ),
-                          ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24.0,
+                                vertical: 16.0,
+                              ),
+                              child: ElevatedButton(
+                                onPressed: viewModel.hideAlert,
+                                child: const Text('Hide alert'),
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
-                  ),
-                );
-              },
+                  ],
+                ),
+              ),
             ),
           );
         }),
+      ),
+    );
+  }
+}
+
+class AlertButton extends StatelessWidget {
+  final Color color;
+  final IconData icon;
+  final String text;
+  final VoidCallback onPressed;
+
+  const AlertButton({
+    super.key,
+    required this.color,
+    required this.icon,
+    required this.text,
+    required this.onPressed,
+  });
+  @override
+  Widget build(BuildContext context) {
+    return ElevatedButton(
+      onPressed: onPressed,
+      style: ButtonStyle(
+        backgroundColor: MaterialStatePropertyAll(color),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.max,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Icon(icon),
+          const SizedBox(width: 4.0),
+          Text(text),
+        ],
       ),
     );
   }

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:priority/view_model.dart';
+import 'package:priority/alerts_view_model.dart';
 import 'package:provider/provider.dart';
 
 const kAlertHeight = 80.0;
@@ -23,7 +23,6 @@ class Alert extends StatelessWidget implements Comparable {
   });
 
   final Color backgroundColor;
-
   final String message;
   final Widget leading;
   final AlertPriority priority;
@@ -109,7 +108,7 @@ class AlertMessengerState extends State<AlertMessenger>
     animation = Tween<double>(begin: -alertHeight, end: 0.0).animate(
       CurvedAnimation(parent: controller, curve: Curves.easeInOut),
     );
-    context.watch<ViewModel>().controller = controller;
+    context.watch<AlertsViewModel>().setController(controller);
   }
 
   @override
@@ -120,7 +119,7 @@ class AlertMessengerState extends State<AlertMessenger>
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<ViewModel>(
+    return Consumer<AlertsViewModel>(
       builder: (context, viewModel, _) {
         final listAlertWidgets = viewModel.listAlertWidgets;
         return AnimatedBuilder(
